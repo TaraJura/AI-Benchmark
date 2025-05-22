@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Simple Web Paint</title>
+<style>
+  body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  #toolbar {
+    padding: 10px;
+    background-color: #eee;
+  }
+  #canvas {
+    flex: 1;
+    border: 1px solid #ccc;
+    cursor: crosshair;
+  }
+</style>
+</head>
+<body>
+  <div id="toolbar">
+    <button id="download">Download</button>
+    <label>Brush Size: <input type="number" id="brushSize" value="4" min="1" max="50" /></label>
+    <input type="color" id="color" value="#000000" />
+  </div>
+  <canvas id="canvas"></canvas>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const downloadBtn = document.getElementById('download');
+    const brushSizeInput = document.getElementById('brushSize');
+    const colorInput = document.getElementById('color');
+
+    let drawing = false;
+
+    function resizeCanvas(width, height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    canvas.addEventListener('mousedown', e => {
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    });
+    canvas.addEventListener('mousemove', e => {
+      if (!drawing) return;
+      ctx.lineWidth = brushSizeInput.value;
+      ctx.strokeStyle = colorInput.value;
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    });
+    canvas.addEventListener('mouseup', () => drawing = false);
+    canvas.addEventListener('mouseleave', () => drawing = false);
+
+    // Handle paste image
+    window.addEventListener('paste', event => {
+      const items = event.clipboardData.items;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          const img = new Image();
+          img.onload = () => {
+            resizeCanvas(img.width, img.height);
+            ctx.drawImage(img, 0, 0);
+          };
+          const URLObj = window.URL || window.webkitURL;
+          img.src = URLObj.createObjectURL(file);
+        }
+      }
+    });
+
+    // Download image
+    downloadBtn.addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = 'drawing.png';
+      link.click();
+    });
+  </script>
+</body>
+</html>
